@@ -11,6 +11,7 @@ from widget.handlers.assets import Assets
 from widget.handlers.python_widget import PythonWidget
 from widget.handlers.static_widget import StaticWidget
 from widget.widget_handler import add_widget
+
 #
 # END DS-SERVICE-WIDGET-IMPORT
 #END_HEADER
@@ -32,8 +33,8 @@ class eapearsonWidgetDemo:
     # the latter method is running.
     ######################################### noqa
     VERSION = "0.0.1"
-    GIT_URL = ""
-    GIT_COMMIT_HASH = "68ebd0ae8a8d3ffac7b6f6185ac49fbe8201b5b5"
+    GIT_URL = "git@github.com:eapearson/kbase-sdk-module-eapearsonWidgetDemo.git"
+    GIT_COMMIT_HASH = "0a50e1e07b6a12a1d8fb68c317580f6f7de5cd0a"
 
     #BEGIN_CLASS_HEADER
     #END_CLASS_HEADER
@@ -42,7 +43,6 @@ class eapearsonWidgetDemo:
     # be found
     def __init__(self, config):
         #BEGIN_CONSTRUCTOR
-        self.callback_url = os.environ['SDK_CALLBACK_URL']
         self.shared_folder = config['scratch']
         logging.basicConfig(format='%(created)s %(levelname)s: %(message)s',
                             level=logging.INFO)
@@ -104,33 +104,6 @@ class eapearsonWidgetDemo:
         #END_CONSTRUCTOR
         pass
 
-
-    def run_eapearsonWidgetDemo(self, ctx, params):
-        """
-        This example function accepts any number of parameters and returns results in a KBaseReport
-        :param params: instance of mapping from String to unspecified object
-        :returns: instance of type "ReportResults" -> structure: parameter
-           "report_name" of String, parameter "report_ref" of String
-        """
-        # ctx is the context object
-        # return variables are: output
-        #BEGIN run_eapearsonWidgetDemo
-        report = KBaseReport(self.callback_url)
-        report_info = report.create({'report': {'objects_created':[],
-                                                'text_message': params['parameter_1']},
-                                                'workspace_name': params['workspace_name']})
-        output = {
-            'report_name': report_info['name'],
-            'report_ref': report_info['ref'],
-        }
-        #END run_eapearsonWidgetDemo
-
-        # At some point might do deeper type checking...
-        if not isinstance(output, dict):
-            raise ValueError('Method run_eapearsonWidgetDemo return value ' +
-                             'output is not type dict as required.')
-        # return the results
-        return [output]
     def status(self, ctx):
         #BEGIN_STATUS
         returnVal = {'state': "OK",
@@ -138,5 +111,7 @@ class eapearsonWidgetDemo:
                      'version': self.VERSION,
                      'git_url': self.GIT_URL,
                      'git_commit_hash': self.GIT_COMMIT_HASH}
+        #END_STATUS
+        return [returnVal]
         #END_STATUS
         return [returnVal]

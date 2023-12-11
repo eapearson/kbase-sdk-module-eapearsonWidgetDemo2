@@ -6,29 +6,27 @@ import os
 import random as _random
 import sys
 import traceback
-from getopt import getopt, GetoptError
+from getopt import GetoptError, getopt
 from multiprocessing import Process
 from os import environ
 from wsgiref.simple_server import make_server
 
 import requests as _requests
-from jsonrpcbase import JSONRPCService, InvalidParamsError, KeywordError, \
-    JSONRPCError, InvalidRequestError
-from jsonrpcbase import ServerError as JSONServerError
-
 from biokbase import log
-from installed_clients.authclient import KBaseAuth as _KBaseAuth
+from jsonrpcbase import (InvalidParamsError, InvalidRequestError, JSONRPCError,
+                         JSONRPCService, KeywordError)
+from jsonrpcbase import ServerError as JSONServerError
 
 try:
     from ConfigParser import ConfigParser
 except ImportError:
     from configparser import ConfigParser
 
-
 # BEGIN DS-SERVICE-WIDGET-IMPORT
 # Injected by the Dynamic Service Widget Tool
 #
 from widget.widget_handler import widget_handler
+
 #
 # END DS-SERVICE-WIDGET-IMPORT
 
@@ -59,7 +57,9 @@ def get_config():
 
 config = get_config()
 
-from eapearsonWidgetDemo.eapearsonWidgetDemoImpl import eapearsonWidgetDemo  # noqa @IgnorePep8
+from eapearsonWidgetDemo.eapearsonWidgetDemoImpl import \
+    eapearsonWidgetDemo  # noqa @IgnorePep8
+
 impl_eapearsonWidgetDemo = eapearsonWidgetDemo(config)
 
 
@@ -251,6 +251,7 @@ class MethodContext(dict):
                                  self['method'], self['call_id'])
 
     def provenance(self):
+        # HARMLESS for DS, but unnecessary
         callbackURL = os.environ.get('SDK_CALLBACK_URL')
         if callbackURL:
             # OK, there's a callback server from which we can get provenance
@@ -345,19 +346,11 @@ class Application(object):
             call_id=True, logfile=self.userlog.get_log_file())
         self.serverlog.set_log_level(6)
         self.rpc_service = JSONRPCServiceCustom()
-        self.method_authentication = dict()
-        self.rpc_service.add(impl_eapearsonWidgetDemo.run_eapearsonWidgetDemo,
-                             name='eapearsonWidgetDemo.run_eapearsonWidgetDemo',
-                             types=[dict])
-        self.method_authentication['eapearsonWidgetDemo.run_eapearsonWidgetDemo'] = 'required'  # noqa
         self.rpc_service.add(impl_eapearsonWidgetDemo.status,
                              name='eapearsonWidgetDemo.status',
                              types=[dict])
-        authurl = config.get(AUTH) if config else None
-        self.auth_client = _KBaseAuth(authurl)
 
     def __call__(self, environ, start_response):
-
         # BEGIN DS-SERVICE-WIDGET-PATH-HANDLER
         # Injected by the Dynamic Service Widget Tool
         #
@@ -368,7 +361,7 @@ class Application(object):
             return [content]
         #
         # END DS-SERVICE-WIDGET-PATH-HANDLER
-
+        
         # Context object, equivalent to the perl impl CallContext
         ctx = MethodContext(self.userlog)
         ctx['client_ip'] = getIPAddress(environ)
@@ -407,34 +400,6 @@ class Application(object):
                                }
                 ctx['provenance'] = [prov_action]
                 try:
-                    token = environ.get('HTTP_AUTHORIZATION')
-                    # parse out the method being requested and check if it
-                    # has an authentication requirement
-                    method_name = req['method']
-                    auth_req = self.method_authentication.get(
-                        method_name, 'none')
-                    if auth_req != 'none':
-                        if token is None and auth_req == 'required':
-                            err = JSONServerError()
-                            err.data = (
-                                'Authentication required for ' +
-                                'eapearsonWidgetDemo ' +
-                                'but no authentication header was passed')
-                            raise err
-                        elif token is None and auth_req == 'optional':
-                            pass
-                        else:
-                            try:
-                                user = self.auth_client.get_user(token)
-                                ctx['user_id'] = user
-                                ctx['authenticated'] = 1
-                                ctx['token'] = token
-                            except Exception as e:
-                                if auth_req == 'required':
-                                    err = JSONServerError()
-                                    err.data = \
-                                        "Token validation failed: %s" % e
-                                    raise err
                     if (environ.get('HTTP_X_FORWARDED_FOR')):
                         self.log(log.INFO, ctx, 'X-Forwarded-For: ' +
                                  environ.get('HTTP_X_FORWARDED_FOR'))
@@ -579,11 +544,6 @@ def process_async_cli(input_file_path, output_file_path, token):
     if 'id' not in req:
         req['id'] = str(_random.random())[2:]
     ctx = MethodContext(application.userlog)
-    if token:
-        user = application.auth_client.get_user(token)
-        ctx['user_id'] = user
-        ctx['authenticated'] = 1
-        ctx['token'] = token
     if 'context' in req:
         ctx['rpc_context'] = req['context']
     ctx['CLI'] = 1
@@ -647,6 +607,16 @@ if __name__ == "__main__":
             assert False, "unhandled option"
 
     start_server(host=host, port=port)
+#    print("Listening on port %s" % port)
+#    httpd = make_server( host, port, application)
+#
+#    httpd.serve_forever()
+#    print("Listening on port %s" % port)
+#    httpd = make_server( host, port, application)
+#
+#    httpd.serve_forever()
+#
+#    httpd.serve_forever()
 #    print("Listening on port %s" % port)
 #    httpd = make_server( host, port, application)
 #
