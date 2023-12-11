@@ -6,7 +6,7 @@ from configparser import ConfigParser
 
 from eapearsonWidgetDemo.eapearsonWidgetDemoImpl import eapearsonWidgetDemo
 from eapearsonWidgetDemo.eapearsonWidgetDemoServer import MethodContext
-from eapearsonWidgetDemo.authclient import KBaseAuth as _KBaseAuth
+from installed_clients.authclient import KBaseAuth as _KBaseAuth
 
 from installed_clients.WorkspaceClient import Workspace
 
